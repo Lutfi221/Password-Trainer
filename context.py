@@ -62,7 +62,7 @@ class AppContext:
         self.settings.update(self._read_json_file(self._settings_path, {}))
 
     def load_training_data(self):
-        self._read_json_file(self._training_data_path, {})
+        self._training_data = self._read_json_file(self._training_data_path, {})
 
     def save_training_data(self):
         self._save_json_file(self._training_data_path, self._training_data)
