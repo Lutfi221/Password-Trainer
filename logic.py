@@ -26,8 +26,13 @@ def create_training_entry(prompt: str, password: str, ctx: AppContext) -> Traini
                 "data": hashed_b64,
                 "prompt": prompt,
                 "salt": base64.encodebytes(salt).decode("ascii"),
+                "hashing": ctx.settings["hashing"],
             }
 
 
 def hash_password(password: str, hash_settings: HashingSettings, salt: bytes) -> bytes:
-    return scrypt(bytes(password, encoding="utf-8"), salt=salt, n=2, r=8, p=1)
+    if hash_settings["algorithm"].lower() != "scrypt":
+        raise Exception("Only the `scrypt` hashing algorithm is currently supported.")
+    return scrypt(
+        bytes(password, encoding="utf-8"), salt=salt, **hash_settings["arguments"]
+    )

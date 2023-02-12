@@ -3,16 +3,18 @@ import os
 from typing import TypedDict
 
 
+class HashingSettings(TypedDict):
+    algorithm: str
+    arguments: dict[str, int | str]
+
+
 class TrainingEntry(TypedDict):
     prompt: str
     data: str
     """Hashed and salted password encoded in base64
     """
     salt: str
-
-
-class HashingSettings(TypedDict):
-    algorithm: str
+    hashing: HashingSettings
 
 
 class Settings(TypedDict):
@@ -22,7 +24,12 @@ class Settings(TypedDict):
 class AppContext:
     _settings_path: str
     _entries_path: str
-    settings: Settings = {"hashing": {"algorithm": "scrypt"}}
+    settings: Settings = {
+        "hashing": {
+            "algorithm": "scrypt",
+            "arguments": {"n": 2, "r": 8, "p": 1, "maxmem": 0, "dklen": 64},
+        }
+    }
     entries: list[TrainingEntry] = []
 
     def __init__(
@@ -47,8 +54,8 @@ class AppContext:
 
     def save_entries(self):
         with open(self._entries_path, "w") as f:
-            json.dump(self.entries, f)
+            json.dump(self.entries, f, indent=4)
 
     def save_settings(self):
         with open(self._settings_path, "w") as f:
-            json.dump(self.settings, f)
+            json.dump(self.settings, f, indent=4)
