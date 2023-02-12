@@ -1,6 +1,7 @@
+import base64
 from getpass import getpass
 from context import AppContext
-from logic import create_training_entry
+from logic import create_training_entry, hash_password
 
 from .helpers import RouteInfo, prompt_selection
 
@@ -12,12 +13,28 @@ def main_page(_) -> RouteInfo:
     )
     match s:
         case 0:
-            print("start training...")
+            return {"next_page": training_page}
         case 1:
             return {"next_page": password_manager_page}
         case 2:
             return {"exit": True}
     return {}
+
+
+def training_page(ctx: AppContext) -> RouteInfo:
+    for entry in ctx.entries:
+        prompt = entry["prompt"]
+        salt = base64.decodebytes(entry["salt"].encode("ascii"))
+        correct_hash = base64.decodebytes(entry["data"].encode("ascii"))
+
+        print("\n{}\n".format(prompt))
+        while True:
+            password = getpass(" > ")
+            hash = hash_password(password, entry["hashing"], salt)
+            if hash == correct_hash:
+                break
+            print("\nWrong input. Try again.\n")
+    return {"steps_back": -1}
 
 
 def password_manager_page(ctx: AppContext) -> RouteInfo:
