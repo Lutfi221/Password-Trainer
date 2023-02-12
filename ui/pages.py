@@ -74,4 +74,4 @@ def prompt_password_entry(ctx: AppContext):
 
     entry = create_training_entry(prompt, password1, ctx)
     ctx.add_training_entry(entry)
-    ctx.save_entries()
+    ctx.save_training_data()

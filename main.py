@@ -7,7 +7,7 @@ def main():
     context = AppContext()
     try:
         context.load_settings()
-        context.load_entries()
+        context.load_training_data()
     except InvalidJsonFileError as e:
         print(str(e))
         print("Fix the file or delete the file.")
