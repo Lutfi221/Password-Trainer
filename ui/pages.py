@@ -22,7 +22,10 @@ def main_page(_) -> RouteInfo:
 
 
 def training_page(ctx: AppContext) -> RouteInfo:
-    for entry in ctx.entries:
+    entries = ctx.get_entries()
+    if len(entries) == 0:
+        print("No training data entries.\n")
+    for entry in ctx.get_entries():
         prompt = entry["prompt"]
         salt = base64.decodebytes(entry["salt"].encode("ascii"))
         correct_hash = base64.decodebytes(entry["data"].encode("ascii"))
@@ -34,7 +37,7 @@ def training_page(ctx: AppContext) -> RouteInfo:
             if hash == correct_hash:
                 break
             print("\nWrong input. Try again.\n")
-    return {"steps_back": -1}
+    return {"steps_back": 1}
 
 
 def password_manager_page(ctx: AppContext) -> RouteInfo:
@@ -70,5 +73,5 @@ def prompt_password_entry(ctx: AppContext):
         print("The two passwords you entered did not match.\n" "Try again.\n")
 
     entry = create_training_entry(prompt, password1, ctx)
-    ctx.entries.append(entry)
+    ctx.add_training_entry(entry)
     ctx.save_entries()

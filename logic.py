@@ -14,7 +14,7 @@ def create_training_entry(prompt: str, password: str, ctx: AppContext) -> Traini
         hashed_b64 = base64.encodebytes(hashed).decode("ascii")
 
         duplicate_hash_found = False
-        for entry in ctx.entries:
+        for entry in ctx.get_entries():
             if entry["data"] == hashed_b64:
                 duplicate_hash_found = True
                 # Duplicate hash found.
