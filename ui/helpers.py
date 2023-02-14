@@ -1,55 +1,17 @@
-from typing import Callable, Optional, TypedDict
-from context import AppContext
+import logging
+import re
+from typing import Optional
+
+l = logging.getLogger(__name__)
 
 
-class RouteInfo(TypedDict):
-    steps_back: Optional[int]
-    next_page: Optional[Callable[[AppContext], any]]
-    go_home: Optional[bool]
-    exit: Optional[bool]
-
-
-Page = Callable[[AppContext], RouteInfo]
-
-
-class PageBrowser:
-    _page_stack: list[Page] = []
-    context: AppContext
-
-    def __init__(self, home_page: Page, context: AppContext):
-        self._page_stack.append(home_page)
-        self.context = context
-
-    def start(self):
-        try:
-            while self._iteration():
-                pass
-        except KeyboardInterrupt:
-            print("Exit")
-
-    def _iteration(self) -> bool:
-        """Load the top page of the :attr:`PageBrowser._pageStack`
-
-        Returns
-        -------
-        bool
-            True if it should loop again, False if the browser should stop.
-        """
-        # Load the page and get the route info
-        route = self._page_stack[-1](self.context)
-
-        if route.get("next_page"):
-            self._page_stack.append(route["next_page"])
-        elif route.get("steps_back"):
-            for _ in range(route["steps_back"]):
-                self._page_stack.pop()
-        elif route.get("go_home"):
-            for _ in range(len(self._page_stack) - 1):
-                self._page_stack.pop()
-        elif route.get("exit"):
-            return False
-
-        return True
+def print_heading(heading="", desc=""):
+    if heading:
+        print("# " + heading)
+        print()
+    if desc:
+        print(desc)
+        print()
 
 
 def print_list(options: list[str]):
@@ -57,7 +19,22 @@ def print_list(options: list[str]):
         print("{}. {}".format(i, items))
 
 
-def prompt_selection(options: list[str], heading="", indent=0) -> int:
+def prompt_input(
+    prompt="", pattern: Optional[re.Pattern] = None, error_msg="Invalid input"
+):
+    if prompt:
+        print(prompt)
+        print()
+
+    while True:
+        user_input = input(" > ")
+        if (not pattern) or pattern.match(user_input):
+            return user_input
+        print(error_msg)
+        print()
+
+
+def prompt_selection(options: list[str], heading="", desc="") -> int:
     """Prompt user to select an option from a list of options.
 
     Parameters
@@ -75,9 +52,7 @@ def prompt_selection(options: list[str], heading="", indent=0) -> int:
         "Select one of the options by "
         "typing a number from {} to {}".format(1, len(options))
     )
-    if heading:
-        print(heading)
-        print()
+    print_heading(heading, desc)
     print_list(options)
     while True:
         print()
@@ -89,5 +64,10 @@ def prompt_selection(options: list[str], heading="", indent=0) -> int:
         selected = int(user_input)
         if selected >= 1 and selected <= len(options):
             print()
+            l.info(
+                "User selected option of index %s with text `%s`",
+                selected - 1,
+                options[selected - 1],
+            )
             return selected - 1
         print(error_msg)

@@ -1,17 +1,29 @@
 import base64
+import logging
 from getpass import getpass
-from context import AppContext
+
+from app import AppContext
+from deck import DeckContext
 from logic import create_training_entry, hash_password
+from ui.browser import RouteInfo
 
-from .helpers import RouteInfo, prompt_selection
+from .helpers import print_heading, prompt_input, prompt_selection
+
+l = logging.getLogger(__name__)
 
 
-def main_page(_) -> RouteInfo:
+def main_page(ctx: AppContext) -> RouteInfo:
     """Main page"""
-    s = prompt_selection(
-        ["Start Training", "Manage Passwords", "Exit"], "# PASSWORD TRAINER"
+    deck_ctx = ctx.get_current_deck_context()
+    decks = ctx.get_deck_infos()
+    if len(decks) == 0:
+        return {"next_page": deck_creation_page}
+    if deck_ctx is None:
+        return {"next_page": deck_selection_page}
+    i = prompt_selection(
+        ["Start Training", "Manage Passwords", "Exit"], "PASSWORD TRAINER"
     )
-    match s:
+    match i:
         case 0:
             return {"next_page": training_page}
         case 1:
@@ -19,6 +31,30 @@ def main_page(_) -> RouteInfo:
         case 2:
             return {"exit": True}
     return {}
+
+
+def deck_creation_page(ctx: AppContext) -> RouteInfo:
+    print_heading("Deck Creation")
+    deck_name = prompt_input("Enter a deck name")
+
+    l.info("Create a new deck named `%s`", deck_name)
+    deck = DeckContext(deck_name)
+    ctx.load_deck(deck)
+    ctx.save_deck()
+    return {"steps_back": 1}
+
+
+def deck_selection_page(ctx: AppContext) -> RouteInfo:
+    decks = ctx.get_deck_infos()
+    options = [deck["name"] for deck in decks]
+    options.append("Exit")
+    i = prompt_selection(options, "Deck Selection", "Select a Deck to Load")
+
+    if i >= len(options) - 1:
+        return {"exit": True}
+
+    ctx.load_deck_from_info(decks[i])
+    return {"steps_back": 1}
 
 
 def training_page(ctx: AppContext) -> RouteInfo:
@@ -41,16 +77,14 @@ def training_page(ctx: AppContext) -> RouteInfo:
 
 
 def password_manager_page(ctx: AppContext) -> RouteInfo:
-    s = prompt_selection(
-        ["Add Password Entry", "Open Password Training File", "Back"],
-        "# TRAINING DATA MANAGER",
+    i = prompt_selection(
+        ["Add Password Entry", "Back"],
+        "Deck Data Manager",
     )
-    match s:
+    match i:
         case 0:
             prompt_password_entry(ctx)
         case 1:
-            print("open password training file...")
-        case 2:
             return {"steps_back": 1}
     return {}
 
@@ -73,5 +107,6 @@ def prompt_password_entry(ctx: AppContext):
         print("The two passwords you entered did not match.\n" "Try again.\n")
 
     entry = create_training_entry(prompt, password1, ctx)
-    ctx.add_training_entry(entry)
-    ctx.save_training_data()
+    deck = ctx.get_current_deck_context()
+    deck.append_entry(entry)
+    ctx.save_deck()
