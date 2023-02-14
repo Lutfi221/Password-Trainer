@@ -1,5 +1,7 @@
 /settings.json
 /training-data.json
+/password-trainer.log
+/decks/
 
 .vscode
 

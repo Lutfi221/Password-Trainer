@@ -1,22 +1,29 @@
-from context import AppContext, InvalidJsonFileError
-from ui.helpers import PageBrowser
+import logging
+
+from app import AppContext, InvalidJsonFileError
+from ui.browser import PageBrowser
 from ui.pages import main_page
 
 
 def main():
-    context = AppContext()
+    logging.basicConfig(
+        filename="./password-trainer.log",
+        encoding="utf-8",
+        filemode="w",
+        level=logging.DEBUG,
+    )
+    l = logging.getLogger()
     try:
-        context.load_settings()
-        context.load_training_data()
-    except InvalidJsonFileError as e:
-        print(str(e))
-        print("Fix the file or delete the file.")
-        return
-    browser = PageBrowser(main_page, context)
-    try:
+        context = AppContext("./settings.json", "./decks/")
+        browser = PageBrowser(main_page, context)
         browser.start()
     except KeyboardInterrupt:
         print("Exit")
+    except InvalidJsonFileError as e:
+        l.error("Tried loading an invalid JSON file", exc_info=1)
+        print(e)
+        print("The invalid JSON file: {}".format(e.path))
+        return
     return
 
 
