@@ -1,9 +1,16 @@
+import logging
 from context import AppContext, InvalidJsonFileError
 from ui.helpers import PageBrowser
 from ui.pages import main_page
 
 
 def main():
+    logging.basicConfig(
+        filename="./app-logs/latest.log",
+        encoding="utf-8",
+        filemode="w",
+        level=logging.DEBUG,
+    )
     context = AppContext()
     try:
         context.load_settings()
