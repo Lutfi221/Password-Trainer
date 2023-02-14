@@ -35,14 +35,18 @@ class AppContext:
 
     def save_deck(self):
         """Save the currently loaded deck into :attr:`AppContext._decks_dir_path`.
-        If it's a brand new deck, then a new file will be created."""
+        If it's a brand new deck, then a new file will be created.
+        """
         data = self._deck_context.generate_encrypted_deck_data()
         path = os.path.join(
             self._decks_dir_path, self._deck_context.name + DECK_FILE_SUFFIX
         )
+        is_new_deck = not os.path.isfile(path)
         l.info("Save deck `%s` to `%s`", self._deck_context.name, path)
         write_json_to_file(path, data)
-        self._load_deck_infos()
+
+        if is_new_deck:
+            self._deck_infos.append({"name": self._deck_context.name, "path": path})
 
     def get_deck_infos(self) -> list[DeckInfo]:
         return self._deck_infos

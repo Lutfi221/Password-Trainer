@@ -3,22 +3,21 @@ from hashlib import scrypt
 import secrets
 import logging
 
-from app import AppContext
-from deck import DeckEntry
+from deck import DeckContext, DeckEntry
 from settings import HashingSettings
 
 l = logging.getLogger(__name__)
 
 
-def create_training_entry(prompt: str, password: str, ctx: AppContext) -> DeckEntry:
-    settings = ctx.get_settings()
-    entries = ctx.get_current_deck_context().get_entries()
+def create_training_entry(prompt: str, password: str, deck: DeckContext) -> DeckEntry:
+    entries = deck.get_entries()
+    hashing = deck.get_hashing()
 
     while True:
         salt: bytes = secrets.randbits(32 * 8).to_bytes(
             32, "big"
         )  # Generate a 32 byte salt
-        hashed = hash_password(password, settings["hashing"], salt)
+        hashed = hash_password(password, hashing, salt)
         hashed_b64 = base64.encodebytes(hashed).decode("ascii")
 
         duplicate_hash_found = False
@@ -33,7 +32,6 @@ def create_training_entry(prompt: str, password: str, ctx: AppContext) -> DeckEn
                 "data": hashed_b64,
                 "prompt": prompt,
                 "salt": base64.encodebytes(salt).decode("ascii"),
-                "hashing": settings["hashing"],
             }
 
 
