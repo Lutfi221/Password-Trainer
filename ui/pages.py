@@ -2,12 +2,12 @@ import base64
 import logging
 from getpass import getpass
 
-from app import AppContext
-from deck import DeckContext
+from app import AppContext, read_json_file
+from deck import DeckContext, DeckData, generate_deck_encryption_settings
 from logic import create_training_entry, hash_password
 from ui.browser import RouteInfo
 
-from .helpers import print_heading, prompt_input, prompt_selection
+from .helpers import print_heading, prompt_input, prompt_password, prompt_selection
 
 l = logging.getLogger(__name__)
 
@@ -37,8 +37,24 @@ def deck_creation_page(ctx: AppContext) -> RouteInfo:
     print_heading("Deck Creation")
     deck_name = prompt_input("Enter a deck name")
 
+    s = prompt_selection(
+        ["Encryption Enabled (recommended)", "No Encryption"],
+        "Deck Encryption Selection",
+    )
+
+    if s == 0:
+        password = prompt_password("Enter deck password")
+        encryption = generate_deck_encryption_settings(True)
+    else:
+        password = None
+        encryption = generate_deck_encryption_settings(False)
+
     l.info("Create a new deck named `%s`", deck_name)
-    deck = DeckContext(deck_name, {"hashing": ctx.get_settings()["hashing"]})
+    deck = DeckContext(
+        deck_name,
+        {"hashing": ctx.get_settings()["hashing"], "encryption": encryption},
+        password,
+    )
     ctx.load_deck(deck)
     ctx.save_deck()
     return {"steps_back": 1}
@@ -53,7 +69,15 @@ def deck_selection_page(ctx: AppContext) -> RouteInfo:
     if i >= len(options) - 1:
         return {"exit": True}
 
-    ctx.load_deck_from_info(decks[i])
+    deck_info = decks[i]
+    deck_data: DeckData = read_json_file(deck_info["path"])
+
+    password: str | None = None
+    if deck_data["encryption"]["enabled"]:
+        password = prompt_password("Enter deck password", False)
+
+    deck = DeckContext(deck_info["name"], deck_data, password)
+    ctx.load_deck(deck)
     return {"steps_back": 1}
 
 
@@ -95,20 +119,9 @@ def prompt_password_entry(ctx: AppContext):
     print("Enter password entry prompt.")
     prompt = input(" > ")
     print()
-    while True:
-        print("Enter password")
-        password1 = getpass(" > ")
-        print()
-        print("Confirm password")
-        password2 = getpass(" > ")
-        print()
-
-        if password1 == password2:
-            break
-
-        print("The two passwords you entered did not match.\n" "Try again.\n")
+    password = prompt_password("Enter password")
 
     deck = ctx.get_current_deck_context()
-    entry = create_training_entry(prompt, password1, deck)
+    entry = create_training_entry(prompt, password, deck)
     deck.append_entry(entry)
     ctx.save_deck()

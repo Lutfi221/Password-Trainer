@@ -1,11 +1,10 @@
-import json
 import logging
 import os
 from glob import glob
-from typing import Optional
 
 from deck import DeckContext, DeckInfo
 from settings import Settings
+from utils import read_json_file, write_json_to_file
 
 DECK_FILE_SUFFIX = ".deck.json"
 """Extension or suffix for a deck file"""
@@ -37,7 +36,7 @@ class AppContext:
         """Save the currently loaded deck into :attr:`AppContext._decks_dir_path`.
         If it's a brand new deck, then a new file will be created.
         """
-        data = self._deck_context.generate_encrypted_deck_data()
+        data = self._deck_context.generate_deck_data()
         path = os.path.join(
             self._decks_dir_path, self._deck_context.name + DECK_FILE_SUFFIX
         )
@@ -93,37 +92,3 @@ class AppContext:
             deck_name = os.path.basename(filepath)[:-10]
             self._deck_infos.append({"name": deck_name, "path": filepath})
             l.info("Appended deck `{}`".format(deck_name))
-
-
-class InvalidJsonFileError(Exception):
-    path: str
-    lineno: int
-    colno: int
-
-    def __init__(self, path: str, lineno: int, colno: int):
-        super().__init__(
-            "Invalid JSON at `{}` line {} column {}".format(path, lineno, colno)
-        )
-        self.path = path
-        self.lineno = lineno
-        self.colno = colno
-
-
-def read_json_file(path: str, default: Optional[any] = None) -> any:
-    l.info("Reading json file from {}".format(path))
-    if os.stat(path).st_size == 0:
-        l.info("JSON file is empty, returning default object")
-        return default
-    try:
-        with open(path, "r") as f:
-            data = json.load(f)
-    except json.decoder.JSONDecodeError as e:
-        raise InvalidJsonFileError(path, e.lineno, e.colno)
-    return data
-
-
-def write_json_to_file(path: str, data: any):
-    l.info("Writing json into file at {}".format(path))
-    with open(path, "w") as f:
-        json.dump(data, f, indent=4)
-    return data

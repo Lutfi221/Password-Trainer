@@ -1,8 +1,9 @@
 import logging
 
-from app import AppContext, InvalidJsonFileError
+from app import AppContext
 from ui.browser import PageBrowser
 from ui.pages import main_page
+from utils import InvalidJsonFileError
 
 
 def main():

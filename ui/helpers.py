@@ -1,3 +1,4 @@
+from getpass import getpass
 import logging
 import re
 from typing import Optional
@@ -28,6 +29,7 @@ def prompt_input(
 
     while True:
         user_input = input(" > ")
+        print()
         if (not pattern) or pattern.match(user_input):
             return user_input
         print(error_msg)
@@ -71,3 +73,21 @@ def prompt_selection(options: list[str], heading="", desc="") -> int:
             )
             return selected - 1
         print(error_msg)
+
+
+def prompt_password(prompt="Enter password", confirm_password=True):
+    while True:
+        print(prompt)
+        password1 = getpass(" > ")
+        if not confirm_password:
+            return password1
+
+        print()
+        print("Confirm password")
+        password2 = getpass(" > ")
+        print()
+
+        if password1 == password2:
+            return password1
+
+        print("The two passwords you entered did not match.\n" "Try again.\n")
